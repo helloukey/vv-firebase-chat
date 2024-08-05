@@ -35,6 +35,8 @@ const Authentication = (props: Props) => {
     } else {
       await signInWithEmailAndPassword(email, password);
     }
+
+    console.log(user, loginUser);
   };
 
   return (
