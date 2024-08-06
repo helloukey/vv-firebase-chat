@@ -36,8 +36,8 @@ const Navbar = (props: Props) => {
               role="button"
               className="btn btn-ghost btn-circle avatar"
             >
-              <button className="btn btn-circle p-2" disabled={loading}>
-                <img alt="User" src={profile} height={24} width={24} />
+              <button className="btn btn-circle p-1" disabled={loading}>
+                <img alt="User" src={user?.photoURL ? user.photoURL : profile} height={24} width={24} className="rounded-full" />
               </button>
             </div>
             <ul
