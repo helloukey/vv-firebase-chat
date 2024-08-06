@@ -6,6 +6,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "./firebase/config";
 import { Error } from "./components/Error";
 import { Chats } from "./components/Chats";
+import { Profile } from "./components/Profile";
 
 function App() {
   const [user, loading, error] = useAuthState(auth);
@@ -45,6 +46,10 @@ function App() {
             <Route
               path="/chats"
               element={user ? <Chats /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/profile"
+              element={user ? <Profile /> : <Navigate to="/" />}
             />
           </Routes>
         </div>
