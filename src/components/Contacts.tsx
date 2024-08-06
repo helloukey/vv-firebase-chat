@@ -9,7 +9,7 @@ type Props = {
 const Contacts = ({ contacts }: Props) => {
 
   return (
-    <div className="w-full max-w-sm border-r">
+    <div className="w-full md:max-w-xs border-r broder-base-300 overflow-y-auto">
       <h1 className="p-4 bg-primary text-white font-semibold">Contacts</h1>
       {contacts
         ? contacts.map((contact) => (

@@ -64,9 +64,11 @@ const Chats = (props: Props) => {
   }
 
   return (
-    <div className="w-full mb-20 mt-16 border shadow-sm min-h-[60vh] flex">
-      <Contacts contacts={data} />
-      <Messages currentChat={currentChat} />
+    <div className="w-full mb-20 mt-16 border shadow-sm h-[65vh]">
+      <div className="w-full h-full mx-auto flex flex-row border border-base-300">
+        <Contacts contacts={data} />
+        <Messages currentChat={currentChat} />
+      </div>
     </div>
   );
 };
