@@ -1,7 +1,8 @@
 import { Link, redirect } from "react-router-dom";
 import profile from "../assets/profile.svg";
 import { useSignOut, useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../firebase/config";
+import { auth, db } from "../firebase/config";
+import { doc, setDoc } from "firebase/firestore";
 
 type Props = {};
 
@@ -13,6 +14,15 @@ const Navbar = (props: Props) => {
   const handleLogout = async () => {
     const success = await signOut();
     if (success) {
+      if (user) {
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            online: false,
+          },
+          { merge: true }
+        );
+      }
       return redirect("/");
     }
   };
@@ -37,7 +47,13 @@ const Navbar = (props: Props) => {
               className="btn btn-ghost btn-circle avatar"
             >
               <button className="btn btn-circle p-1" disabled={loading}>
-                <img alt="User" src={user?.photoURL ? user.photoURL : profile} height={24} width={24} className="rounded-full" />
+                <img
+                  alt="User"
+                  src={user?.photoURL ? user.photoURL : profile}
+                  height={24}
+                  width={24}
+                  className="rounded-full"
+                />
               </button>
             </div>
             <ul

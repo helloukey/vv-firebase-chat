@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { auth } from "../firebase/config";
+import { auth, db } from "../firebase/config";
 import {
   useCreateUserWithEmailAndPassword,
   useSignInWithEmailAndPassword,
 } from "react-firebase-hooks/auth";
+import { doc, setDoc } from "firebase/firestore";
 import { Error } from "./Error";
 
 type Props = {};
@@ -31,9 +32,26 @@ const Authentication = (props: Props) => {
     e.preventDefault();
 
     if (screen === "register") {
-      await createUserWithEmailAndPassword(email, password);
+      const response = await createUserWithEmailAndPassword(email, password);
+      if (response) {
+        await setDoc(doc(db, "users", response.user.uid), {
+          displayName: "",
+          email: response.user.email,
+          online: true,
+          photoURL: "",
+        });
+      }
     } else {
-      await signInWithEmailAndPassword(email, password);
+      const response = await signInWithEmailAndPassword(email, password);
+      if (response) {
+        await setDoc(
+          doc(db, "users", response.user.uid),
+          {
+            online: true,
+          },
+          { merge: true }
+        );
+      }
     }
 
     console.log(user, loginUser);

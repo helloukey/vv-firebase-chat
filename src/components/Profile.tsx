@@ -1,10 +1,11 @@
 import { useAuthState, useUpdateProfile } from "react-firebase-hooks/auth";
 import { useUploadFile } from "react-firebase-hooks/storage";
-import { auth, storage } from "../firebase/config";
+import { auth, db, storage } from "../firebase/config";
 import profile from "../assets/profile.svg";
 import { useState } from "react";
 import { Error } from "./Error";
 import { ref, getDownloadURL } from "firebase/storage";
+import { doc, setDoc } from "firebase/firestore";
 import { redirect } from "react-router-dom";
 
 type Props = {};
@@ -72,6 +73,17 @@ const Profile = (props: Props) => {
     if (success) {
       setName("");
       setImage(null);
+      if (user) {
+        await setDoc(
+          doc(db, "users", user.uid),
+          {
+            displayName: user.displayName || "",
+            online: true,
+            photoURL: user.photoURL || "",
+          },
+          { merge: true }
+        );
+      }
       return redirect("/profile");
     }
   };

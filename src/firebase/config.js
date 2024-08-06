@@ -18,10 +18,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
 
 // firebase services init
-const db = getFirestore();
+const db = getFirestore(app);
 const auth = getAuth();
 const storage = getStorage();
 const timestamp = serverTimestamp();
