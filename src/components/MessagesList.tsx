@@ -1,6 +1,4 @@
 import { DocumentData } from "firebase/firestore";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../firebase/config";
 import { useEffect, useRef } from "react";
 
 type Props = {
