@@ -15,7 +15,7 @@ type User = {
 
 const Profile = (props: Props) => {
   const [user] = useAuthState(auth);
-  const [name, setName] = useState<string>(user?.displayName || "");
+  const [name, setName] = useState<string>("");
   const [image, setImage] = useState<File | null | undefined>(null);
   const [inputError, setInputError] = useState<string>("");
   const [uploadFile, uploading, , error] = useUploadFile();
@@ -70,6 +70,8 @@ const Profile = (props: Props) => {
 
     const success = await updateProfile(obj);
     if (success) {
+      setName("");
+      setImage(null);
       return redirect("/profile");
     }
   };
@@ -95,7 +97,7 @@ const Profile = (props: Props) => {
               setName(e.target.value)
             }
             maxLength={20}
-            defaultValue={name}
+            defaultValue={user?.displayName ? user.displayName : name}
           />
         </div>
         <div className="form-control w-full max-w-xs">
