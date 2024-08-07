@@ -14,9 +14,9 @@ const Authentication = (props: Props) => {
   const [screen, setScreen] = useState<"login" | "register">("login");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [createUserWithEmailAndPassword, user, loading, error] =
+  const [createUserWithEmailAndPassword,, loading, error] =
     useCreateUserWithEmailAndPassword(auth);
-  const [signInWithEmailAndPassword, loginUser, loginLoading, loginError] =
+  const [signInWithEmailAndPassword,, loginLoading, loginError] =
     useSignInWithEmailAndPassword(auth);
   const database = getDatabase();
 
@@ -53,8 +53,6 @@ const Authentication = (props: Props) => {
         set(myConnectionsRef, true);
       }
     }
-
-    console.log(user, loginUser);
   };
 
   return (
