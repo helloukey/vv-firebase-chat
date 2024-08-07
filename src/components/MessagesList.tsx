@@ -1,4 +1,4 @@
-import { doc, DocumentData, setDoc, updateDoc } from "firebase/firestore";
+import { doc, DocumentData, setDoc } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "../firebase/config";
@@ -61,36 +61,6 @@ const MessagesList = ({
       setReading(data);
     });
   }, [database, currentChat]);
-
-  // Update messages as read for views
-  // useEffect(() => {
-  //   if (currentChat && messages && chatId) {
-  //     const updatedMessages = messages.map((message: Message) => {
-  //       if (
-  //         reading &&
-  //         currentChat?.online &&
-  //         message.receiver === currentChat?.uid
-  //       ) {
-  //         return { ...message, status: "read" };
-  //       } else if (
-  //         !reading &&
-  //         currentChat?.online &&
-  //         message.receiver === currentChat?.uid
-  //       ) {
-  //         return { ...message, status: "delivered" };
-  //       } else {
-  //         return message;
-  //       }
-  //     });
-  //     const updater = setTimeout(() => {
-  //       updateDoc(doc(db, "chats", chatId), {
-  //         messages: updatedMessages,
-  //       });
-  //     }, 1000);
-
-  //     clearTimeout(updater);
-  //   }
-  // }, [reading, currentChat, chatId, messages]);
 
   // Update messages as read for views
   useEffect(() => {
