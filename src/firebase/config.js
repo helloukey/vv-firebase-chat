@@ -4,6 +4,7 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { serverTimestamp } from "firebase/firestore";
+import { getDatabase } from "firebase/database";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -15,6 +16,7 @@ const firebaseConfig = {
   storageBucket: "vv-firebase-chat.appspot.com",
   messagingSenderId: "152816903347",
   appId: "1:152816903347:web:a67f60dc1394d827c83cc6",
+  databaseURL: "https://vv-firebase-chat-default-rtdb.firebaseio.com"
 };
 
 // Initialize Firebase
@@ -22,8 +24,9 @@ const app = initializeApp(firebaseConfig);
 
 // firebase services init
 const db = getFirestore(app);
+const database = getDatabase(app);
 const auth = getAuth();
 const storage = getStorage();
 const timestamp = serverTimestamp();
 
-export { db, auth, storage, timestamp };
+export { db, database, auth, storage, timestamp };

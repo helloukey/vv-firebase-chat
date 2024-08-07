@@ -7,9 +7,58 @@ import { auth } from "./firebase/config";
 import { Error } from "./components/Error";
 import { Chats } from "./components/Chats";
 import { Profile } from "./components/Profile";
+import {
+  getDatabase,
+  ref,
+  onValue,
+  onDisconnect,
+  set,
+} from "firebase/database";
+import { useEffect } from "react";
 
 function App() {
   const [user, loading, error] = useAuthState(auth);
+
+  useEffect(() => {
+    if (user) {
+      const db = getDatabase();
+      const myConnectionsRef = ref(db, `/users/${user?.uid}`);
+
+      const connectedRef = ref(db, ".info/connected");
+      onValue(connectedRef, (snap) => {
+        if (snap.val() === true) {
+          // We're connected (or reconnected)! Do anything here that should happen only if online (or on reconnect)
+          set(myConnectionsRef, true);
+          // When I disconnect, update the last time I was seen online
+          onDisconnect(myConnectionsRef).set(false);
+        } else {
+          set(myConnectionsRef, false);
+        }
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const db = getDatabase();
+      const myConnectionsRef = ref(db, `/users/${user?.uid}`);
+
+      if (document.visibilityState === "hidden") {
+        set(myConnectionsRef, false);
+      } else {
+        set(myConnectionsRef, true);
+      }
+    };
+
+    if (user) {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    // Clean up the event listener on component unmount
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user]);
 
   // Loading screen
   if (loading) {
