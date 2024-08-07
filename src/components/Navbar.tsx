@@ -1,28 +1,25 @@
 import { Link, redirect } from "react-router-dom";
 import profile from "../assets/profile.svg";
 import { useSignOut, useAuthState } from "react-firebase-hooks/auth";
-import { auth, db } from "../firebase/config";
-import { doc, setDoc } from "firebase/firestore";
+import { auth } from "../firebase/config";
+import { getDatabase, ref, set } from "firebase/database";
 
 type Props = {};
 
 const Navbar = (props: Props) => {
   const [signOut, loading, error] = useSignOut(auth);
   const [user] = useAuthState(auth);
+  const database = getDatabase();
 
   // Handle logout
   const handleLogout = async () => {
+    // Set user online status
+    if (user) {
+      const myConnectionsRef = ref(database, `/users/${user?.uid}`);
+      await set(myConnectionsRef, false);
+    }
     const success = await signOut();
     if (success) {
-      if (user) {
-        await setDoc(
-          doc(db, "users", user.uid),
-          {
-            online: false,
-          },
-          { merge: true }
-        );
-      }
       return redirect("/");
     }
   };

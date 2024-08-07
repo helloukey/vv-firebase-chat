@@ -6,6 +6,7 @@ import {
 } from "react-firebase-hooks/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { Error } from "./Error";
+import { getDatabase, ref, set } from "firebase/database";
 
 type Props = {};
 
@@ -17,6 +18,7 @@ const Authentication = (props: Props) => {
     useCreateUserWithEmailAndPassword(auth);
   const [signInWithEmailAndPassword, loginUser, loginLoading, loginError] =
     useSignInWithEmailAndPassword(auth);
+  const database = getDatabase();
 
   // Handle Screen Switch
   const handleScreenSwitch = () => {
@@ -37,20 +39,18 @@ const Authentication = (props: Props) => {
         await setDoc(doc(db, "users", response.user.uid), {
           displayName: "",
           email: response.user.email,
-          online: true,
           photoURL: "",
         });
+        // Set user online status
+        const myConnectionsRef = ref(database, `/users/${response.user.uid}`);
+        set(myConnectionsRef, true);
       }
     } else {
       const response = await signInWithEmailAndPassword(email, password);
       if (response) {
-        await setDoc(
-          doc(db, "users", response.user.uid),
-          {
-            online: true,
-          },
-          { merge: true }
-        );
+        // Set user online status
+        const myConnectionsRef = ref(database, `/users/${response.user.uid}`);
+        set(myConnectionsRef, true);
       }
     }
 
