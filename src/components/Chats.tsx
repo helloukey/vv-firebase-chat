@@ -13,6 +13,8 @@ import { Messages } from "./Messages";
 import { Error } from "./Error";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { getDatabase, ref } from "firebase/database";
+import { useList } from "react-firebase-hooks/database";
 
 type Props = {};
 
@@ -25,6 +27,11 @@ const Chats = (props: Props) => {
   const [params] = useSearchParams();
   const id = params.get("id");
   const [currentChat, setCurrentChat] = useState<DocumentData | undefined>();
+  const database = getDatabase();
+  const [snapshots] = useList(ref(database, "users"));
+  const [updatedContacts, setUpdatedContacts] = useState<
+    DocumentData[] | undefined
+  >(data);
 
   // Update Data
   useEffect(() => {
@@ -38,9 +45,23 @@ const Chats = (props: Props) => {
 
   // Current Chat
   useEffect(() => {
-    const result = data?.filter((d) => d.uid === id)[0];
+    const result = updatedContacts?.filter((d) => d.uid === id)[0];
     setCurrentChat(result);
-  }, [id, data]);
+  }, [id, updatedContacts]);
+
+  // Add online status based on snapshot
+  useEffect(() => {
+    if (snapshots && data) {
+      const newContacts = data?.map((contact: DocumentData) => {
+        const snapshot = snapshots.find((snap) => snap.key === contact.uid);
+        return {
+          ...contact,
+          online: snapshot ? snapshot.val() : false,
+        };
+      });
+      setUpdatedContacts(newContacts);
+    }
+  }, [data, snapshots]);
 
   // Loading screen
   if (loading) {
@@ -66,7 +87,7 @@ const Chats = (props: Props) => {
   return (
     <div className="w-full mb-20 mt-16 border shadow-sm h-[65vh]">
       <div className="w-full h-full mx-auto flex flex-row border border-base-300">
-        <Contacts contacts={data} />
+        <Contacts contacts={updatedContacts} />
         <Messages currentChat={currentChat} />
       </div>
     </div>

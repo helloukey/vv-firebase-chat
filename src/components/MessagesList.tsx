@@ -1,11 +1,16 @@
-import { DocumentData } from "firebase/firestore";
-import { useEffect, useRef } from "react";
+import { doc, DocumentData, updateDoc } from "firebase/firestore";
+import { useEffect, useRef, useState } from "react";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth, db } from "../firebase/config";
+import { useInView } from "react-intersection-observer";
+import { getDatabase, onValue, ref, set } from "firebase/database";
 
 type Props = {
   messages: DocumentData | undefined;
   currentChat: DocumentData | null | undefined;
   triggerScroll: boolean;
   setTriggerScroll: React.Dispatch<React.SetStateAction<boolean>>;
+  chatId: string;
 };
 
 type Message = {
@@ -21,16 +26,90 @@ const MessagesList = ({
   currentChat,
   triggerScroll,
   setTriggerScroll,
+  chatId,
 }: Props) => {
+  const [user] = useAuthState(auth);
   const scrollView = useRef<HTMLDivElement | null>(null);
+  const { ref: listen, inView } = useInView();
+  const database = getDatabase();
+  const [reading, setReading] = useState<boolean>(false);
 
   // Scroll to bottom
   useEffect(() => {
     if (triggerScroll && scrollView) {
-      scrollView.current?.scrollIntoView({behavior: "smooth"});
+      scrollView.current?.scrollIntoView({ behavior: "smooth" });
       setTriggerScroll(false);
     }
   }, [triggerScroll, setTriggerScroll]);
+
+  // Add inView to realtime database
+  useEffect(() => {
+    if (user) {
+      const db = getDatabase();
+      const myConnectionsRef = ref(db, `/readings/${user?.uid}`);
+
+      set(myConnectionsRef, inView);
+    }
+  }, [inView, user]);
+
+  // Set Reading state
+  useEffect(() => {
+    // Read & Set reciever status
+    const starCountRef = ref(database, "readings/" + currentChat?.uid);
+    onValue(starCountRef, (snapshot) => {
+      const data = snapshot.val();
+      setReading(data);
+    });
+  }, [database, currentChat]);
+
+  // Update messages as read for views
+  useEffect(() => {
+    if (
+      reading &&
+      currentChat?.online &&
+      messages &&
+      messages[0] &&
+      messages[0].messages
+    ) {
+      const updatedMessages = messages[0].messages.map((message: Message) => {
+        if (message.receiver === currentChat.uid && message.status !== "read") {
+          return { ...message, status: "read" };
+        }
+        return message;
+      });
+      const updater = setTimeout(() => {
+        updateDoc(doc(db, "chats", chatId), {
+          messages: updatedMessages,
+        });
+      }, 1000);
+
+      clearTimeout(updater);
+    }
+  }, [reading, currentChat, chatId, messages]);
+
+  // Update messages as delivered for views
+  useEffect(() => {
+    if (
+      !reading &&
+      currentChat?.online &&
+      messages &&
+      messages[0] &&
+      messages[0].messages
+    ) {
+      const updatedMessages = messages[0].messages.map((message: Message) => {
+        if (message.receiver === currentChat.uid && message.status === "sent") {
+          return { ...message, status: "delivered" };
+        }
+        return message;
+      });
+      const updater = setTimeout(() => {
+        updateDoc(doc(db, "chats", chatId), {
+          messages: updatedMessages,
+        });
+      }, 1000);
+      clearTimeout(updater);
+    }
+  }, [reading, currentChat, chatId, messages]);
 
   return (
     <div className="p-4 w-full overflow-auto">
@@ -44,6 +123,7 @@ const MessagesList = ({
                       ? "chat-start"
                       : "chat-end"
                   }`}
+                  ref={listen}
                 >
                   <div
                     className={`chat-bubble ${
@@ -54,6 +134,12 @@ const MessagesList = ({
                   >
                     {message.text}
                   </div>
+                  {/* Status */}
+                  {message.sender === user?.uid ? (
+                    <div className="chat-footer opacity-50">
+                      {message.status}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ))
