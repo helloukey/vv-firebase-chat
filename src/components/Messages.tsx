@@ -4,6 +4,8 @@ import {
   doc,
   DocumentData,
   documentId,
+  getDoc,
+  onSnapshot,
   query,
   setDoc,
   updateDoc,
@@ -13,7 +15,6 @@ import profile from "../assets/profile.svg";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, database, db } from "../firebase/config";
 import { generateChatId } from "../utils/utils";
-import { useCollection } from "react-firebase-hooks/firestore";
 import { MessagesList } from "./MessagesList";
 import { useEffect, useState } from "react";
 import { onValue, ref } from "firebase/database";
@@ -24,28 +25,85 @@ type Props = {
 
 const Messages = ({ currentChat }: Props) => {
   const [user] = useAuthState(auth);
-  const chatId = generateChatId(currentChat?.uid || "", user?.uid || "");
-  const [value, loading] = useCollection(
-    query(collection(db, "chats"), where(documentId(), "==", chatId))
-  );
+  const chatId = generateChatId(currentChat?.uid, user?.uid);
+  const [data, setData] = useState<DocumentData | undefined>();
   const [text, setText] = useState<string>("");
   const [sending, setSending] = useState(false);
   const [triggerScroll, setTriggerScroll] = useState<boolean>(false);
   const [reading, setReading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  // Set Reading state
+  useEffect(() => {
+    // Read & Set reciever status
+    const starCountRef = ref(database, "readings/" + currentChat?.uid);
+    onValue(starCountRef, (snapshot) => {
+      const data = snapshot.val();
+      setReading(data);
+    });
+  }, [currentChat]);
+
+  // Create messages document
+  useEffect(() => {
+    if (chatId) {
+      const docRef = doc(db, "chats", chatId);
+      setLoading(true);
+      getDoc(docRef)
+        .then((docSnap) => {
+          if (!docSnap.exists()) {
+            setDoc(docRef, {
+              messages: [],
+            }).then(() => {
+              setTriggerScroll(true);
+            });
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [chatId]);
+
+  // Get chats based on chatId
+  useEffect(() => {
+    if (!chatId) return;
+
+    const docRef = query(
+      collection(db, "chats"),
+      where(documentId(), "==", chatId)
+    );
+    const unsubscribe = onSnapshot(docRef, (querySnapshot) => {
+      querySnapshot.forEach((doc) => {
+        setData(doc.data()?.messages);
+      });
+    });
+
+    return () => unsubscribe();
+  }, [chatId]);
 
   // Handle Send
   const handleSend = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Return if fields are missing
-    if (!currentChat || !user) return;
+    if (!currentChat || !user || !chatId) return;
+
+    // status
+    let status;
+    if (reading && currentChat?.online) {
+      status = "read";
+    } else if (!reading && currentChat?.online) {
+      status = "delivered";
+    } else {
+      status = "sent";
+    }
 
     const message = {
       sender: user?.uid,
       receiver: currentChat?.uid,
       text: text,
       createdAt: Date.now(),
-      status: (reading && currentChat?.online) ? "read" : currentChat.online ? "delivered" : "sent",
+      status,
     };
 
     setSending(true);
@@ -57,28 +115,6 @@ const Messages = ({ currentChat }: Props) => {
 
     setText("");
   };
-
-  // Create messages document
-  useEffect(() => {
-    const result = value?.docs.map((doc) => doc.data());
-    if (result && result.length === 0 && user && currentChat?.uid) {
-      setDoc(doc(db, "chats", chatId), {
-        messages: [],
-      }).then(() => {
-        setTriggerScroll(true);
-      });
-    }
-  }, [chatId, value, user, currentChat]);
-
-  // Set Reading state
-  useEffect(() => {
-    // Read & Set reciever status
-    const starCountRef = ref(database, "readings/" + currentChat?.uid);
-    onValue(starCountRef, (snapshot) => {
-      const data = snapshot.val();
-      setReading(data);
-    });
-  }, [currentChat]);
 
   return (
     <div className="w-full flex flex-col">
@@ -98,7 +134,7 @@ const Messages = ({ currentChat }: Props) => {
       </div>
       {/* Messages */}
       <MessagesList
-        messages={value?.docs.map((doc) => doc.data())}
+        messages={data}
         currentChat={currentChat}
         triggerScroll={triggerScroll}
         setTriggerScroll={setTriggerScroll}
@@ -106,23 +142,25 @@ const Messages = ({ currentChat }: Props) => {
       />
 
       {/* Message Input */}
-      <form
-        className="mt-auto p-4 flex flex-nowrap gap-2"
-        onSubmit={handleSend}
-      >
-        <input
-          type="text"
-          placeholder="Type here"
-          className="input input-bordered w-full"
-          value={text}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setText(e.target.value)
-          }
-        />
-        <button className="btn" disabled={loading || sending}>
-          {sending ? "Sending..." : "Send"}
-        </button>
-      </form>
+      {currentChat && user ? (
+        <form
+          className="mt-auto p-4 flex flex-nowrap gap-2"
+          onSubmit={handleSend}
+        >
+          <input
+            type="text"
+            placeholder="Type here"
+            className="input input-bordered w-full"
+            value={text}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setText(e.target.value)
+            }
+          />
+          <button className="btn" disabled={loading || sending}>
+            {sending ? "Sending..." : "Send"}
+          </button>
+        </form>
+      ) : null}
     </div>
   );
 };

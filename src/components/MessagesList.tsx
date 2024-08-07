@@ -1,4 +1,4 @@
-import { doc, DocumentData, updateDoc } from "firebase/firestore";
+import { doc, DocumentData, setDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "../firebase/config";
@@ -55,67 +55,82 @@ const MessagesList = ({
   // Set Reading state
   useEffect(() => {
     // Read & Set reciever status
-    const starCountRef = ref(database, "readings/" + currentChat?.uid);
-    onValue(starCountRef, (snapshot) => {
+    const connectionRef = ref(database, "/readings/" + currentChat?.uid);
+    onValue(connectionRef, (snapshot) => {
       const data = snapshot.val();
       setReading(data);
     });
   }, [database, currentChat]);
 
   // Update messages as read for views
+  // useEffect(() => {
+  //   if (currentChat && messages && chatId) {
+  //     const updatedMessages = messages.map((message: Message) => {
+  //       if (
+  //         reading &&
+  //         currentChat?.online &&
+  //         message.receiver === currentChat?.uid
+  //       ) {
+  //         return { ...message, status: "read" };
+  //       } else if (
+  //         !reading &&
+  //         currentChat?.online &&
+  //         message.receiver === currentChat?.uid
+  //       ) {
+  //         return { ...message, status: "delivered" };
+  //       } else {
+  //         return message;
+  //       }
+  //     });
+  //     const updater = setTimeout(() => {
+  //       updateDoc(doc(db, "chats", chatId), {
+  //         messages: updatedMessages,
+  //       });
+  //     }, 1000);
+
+  //     clearTimeout(updater);
+  //   }
+  // }, [reading, currentChat, chatId, messages]);
+
+  // Update messages as read for views
   useEffect(() => {
-    if (
-      reading &&
-      currentChat?.online &&
-      messages &&
-      messages[0] &&
-      messages[0].messages
-    ) {
-      const updatedMessages = messages[0].messages.map((message: Message) => {
-        if (message.receiver === currentChat.uid && message.status !== "read") {
+    if (currentChat && messages && messages.length && chatId) {
+      const updatedMessages = messages.map((message: DocumentData) => {
+        if (
+          reading &&
+          currentChat.online &&
+          message.receiver === currentChat.uid &&
+          (message.status === "sent" || message.status === "delivered")
+        ) {
           return { ...message, status: "read" };
-        }
-        return message;
-      });
-      const updater = setTimeout(() => {
-        updateDoc(doc(db, "chats", chatId), {
-          messages: updatedMessages,
-        });
-      }, 1000);
-
-      clearTimeout(updater);
-    }
-  }, [reading, currentChat, chatId, messages]);
-
-  // Update messages as delivered for views
-  useEffect(() => {
-    if (
-      !reading &&
-      currentChat?.online &&
-      messages &&
-      messages[0] &&
-      messages[0].messages
-    ) {
-      const updatedMessages = messages[0].messages.map((message: Message) => {
-        if (message.receiver === currentChat.uid && message.status === "sent") {
+        } else if (
+          !reading &&
+          currentChat.online &&
+          message.receiver === currentChat.uid &&
+          message.status === "sent" &&
+          message.status !== "read"
+        ) {
           return { ...message, status: "delivered" };
+        } else {
+          return message;
         }
-        return message;
       });
-      const updater = setTimeout(() => {
-        updateDoc(doc(db, "chats", chatId), {
+
+      const update = async () => {
+        await setDoc(doc(db, "chats", chatId), {
           messages: updatedMessages,
         });
-      }, 1000);
-      clearTimeout(updater);
+      };
+
+      update();
     }
-  }, [reading, currentChat, chatId, messages]);
+  }, [currentChat, messages, chatId, reading]);
 
   return (
     <div className="p-4 w-full overflow-auto">
       <div className="w-full p-4 flex flex-col last:mb-16">
         {messages && messages.length
-          ? messages[0].messages.map((message: Message) => (
+          ? messages.map((message: Message) => (
               <div className="mb-2" key={message.createdAt}>
                 <div
                   className={`chat ${

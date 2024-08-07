@@ -43,12 +43,6 @@ const Chats = (props: Props) => {
     }
   }, [value]);
 
-  // Current Chat
-  useEffect(() => {
-    const result = updatedContacts?.filter((d) => d.uid === id)[0];
-    setCurrentChat(result);
-  }, [id, updatedContacts]);
-
   // Add online status based on snapshot
   useEffect(() => {
     if (snapshots && data) {
@@ -62,6 +56,12 @@ const Chats = (props: Props) => {
       setUpdatedContacts(newContacts);
     }
   }, [data, snapshots]);
+
+  // Current Chat
+  useEffect(() => {
+    const result = updatedContacts?.filter((d) => d.uid === id)[0];
+    setCurrentChat(result);
+  }, [id, updatedContacts]);
 
   // Loading screen
   if (loading) {
