@@ -1,4 +1,4 @@
-import { doc, DocumentData, setDoc } from "firebase/firestore";
+import { doc, DocumentData, updateDoc } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "../firebase/config";
@@ -87,7 +87,7 @@ const MessagesList = ({
       });
 
       const update = async () => {
-        await setDoc(doc(db, "chats", chatId), {
+        await updateDoc(doc(db, "chats", chatId), {
           messages: updatedMessages,
         });
       };
@@ -104,7 +104,7 @@ const MessagesList = ({
               <div className="mb-2" key={message.createdAt}>
                 <div
                   className={`chat ${
-                    currentChat?.uid === message.sender
+                    message.sender === currentChat?.uid
                       ? "chat-start"
                       : "chat-end"
                   }`}
@@ -112,7 +112,7 @@ const MessagesList = ({
                 >
                   <div
                     className={`chat-bubble ${
-                      currentChat?.uid === message.sender
+                      message.sender === currentChat?.uid
                         ? ""
                         : "chat-bubble-accent"
                     }`}
