@@ -78,7 +78,6 @@ const Profile = (props: Props) => {
           doc(db, "users", user.uid),
           {
             displayName: user.displayName || "",
-            online: true,
             photoURL: user.photoURL || "",
           },
           { merge: true }
